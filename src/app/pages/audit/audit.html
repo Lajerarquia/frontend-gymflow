@@ -1,0 +1,63 @@
+<div class="encabezado-pagina">
+  <div>
+    <h1>Auditoría</h1>
+    <p class="subtitulo">Quién creó y quién cambió cada reserva. Solo lectura.</p>
+  </div>
+  <button type="button" class="btn btn-chico" (click)="cargar()">Actualizar</button>
+</div>
+
+<form [formGroup]="filtros" class="fila-filtros" aria-label="Filtros del timeline">
+  <div class="campo">
+    <label for="a-usuario">Usuario</label>
+    <input id="a-usuario" formControlName="usuario" placeholder="Nombre o id" autocomplete="off">
+  </div>
+  <div class="campo">
+    <label for="a-tipo">Tipo de evento</label>
+    <select id="a-tipo" formControlName="tipo">
+      <option value="">Todos</option>
+      @for (t of tipos; track t) { <option [value]="t">{{ etiquetaTipo(t) }}</option> }
+    </select>
+  </div>
+  <div class="campo">
+    <label for="a-desde">Desde</label>
+    <input id="a-desde" type="datetime-local" formControlName="desde">
+  </div>
+  <div class="campo">
+    <label for="a-hasta">Hasta</label>
+    <input id="a-hasta" type="datetime-local" formControlName="hasta">
+  </div>
+</form>
+
+@if (error()) {
+  <div class="tarjeta" role="alert">
+    <p class="ayuda-error">{{ error() }}</p>
+    <button type="button" class="btn" (click)="cargar()">Reintentar</button>
+  </div>
+}
+
+<section class="tarjeta tabla-contenedor" [class.cargando]="cargando()" aria-label="Timeline de eventos">
+  <p class="tenue">{{ visibles().length }} eventos</p>
+  <table class="tabla">
+    <thead>
+      <tr><th>Fecha</th><th>Evento</th><th>Usuario</th><th>Reserva</th><th>Socio</th><th>Clase</th></tr>
+    </thead>
+    <tbody>
+      @for (e of visibles(); track e.clave) {
+        <tr>
+          <td>{{ e.fecha | date: 'd MMM y, HH:mm:ss' }}</td>
+          <td><span class="estado estado-{{ e.tipo }}">{{ etiquetaTipo(e.tipo) }}</span></td>
+          <td>{{ e.usuario }}<div class="tenue">{{ e.usuarioId }}</div></td>
+          <td>#{{ e.reservaId }}</td>
+          <td>{{ e.socio }}</td>
+          <td>{{ e.clase }}</td>
+        </tr>
+      } @empty {
+        <tr><td colspan="6" class="vacio">{{ cargando() ? 'Cargando…' : 'No hay eventos con estos filtros.' }}</td></tr>
+      }
+    </tbody>
+  </table>
+  <p class="tenue">
+    En esta versión cada reserva muestra su creación y su último cambio (createdBy / updatedBy).
+    El historial completo de cambios vendrá de ms-gymflow-audit vía Kafka en la EP2.
+  </p>
+</section>

@@ -1,0 +1,163 @@
+<div class="encabezado-pagina">
+  <div>
+    <h1>Catálogo</h1>
+    <p class="subtitulo">
+      Clases, salas y cupos.
+      @if (!esAdmin()) { Solo el administrador puede modificarlos. }
+    </p>
+  </div>
+</div>
+
+@if (error()) {
+  <div class="tarjeta" role="alert">
+    <p class="ayuda-error">{{ error() }}</p>
+    <button type="button" class="btn" (click)="cargar()">Reintentar</button>
+  </div>
+}
+
+<!-- ===== Clases ===== -->
+@if (esAdmin()) {
+  <section class="tarjeta" aria-labelledby="t-form-clase">
+    <h2 id="t-form-clase">{{ claseEnEdicion() === null ? 'Nueva clase' : 'Editar clase #' + claseEnEdicion() }}</h2>
+    <form [formGroup]="formClase" (ngSubmit)="guardarClase()" class="formulario">
+      <div class="campo">
+        <label for="c-nombre">Nombre</label>
+        <input id="c-nombre" formControlName="name">
+      </div>
+      <div class="campo">
+        <label for="c-instructor">Instructor</label>
+        <input id="c-instructor" formControlName="instructor">
+      </div>
+      <div class="campo">
+        <label for="c-sala">Sala</label>
+        <select id="c-sala" formControlName="roomId">
+          <option value="">Elige una sala…</option>
+          @for (s of salas(); track s.id) { <option [value]="s.id">{{ s.name }} · {{ s.branch }} (aforo {{ s.capacity }})</option> }
+        </select>
+      </div>
+      <div class="campo">
+        <label for="c-inicio">Inicio</label>
+        <input id="c-inicio" type="datetime-local" formControlName="startsAt">
+      </div>
+      <div class="campo">
+        <label for="c-duracion">Duración (min)</label>
+        <input id="c-duracion" type="number" min="15" max="240" formControlName="durationMinutes">
+      </div>
+      <div class="campo">
+        <label for="c-cupo">Cupo</label>
+        <input id="c-cupo" type="number" min="1" formControlName="capacity">
+      </div>
+      <div class="campo">
+        <label for="c-plan">Plan</label>
+        <select id="c-plan" formControlName="plan">
+          @for (p of planes; track p) { <option [value]="p">{{ p }}</option> }
+        </select>
+      </div>
+      <div class="campo">
+        <label for="c-desc">Descripción</label>
+        <input id="c-desc" formControlName="description">
+      </div>
+      <div class="acciones">
+        <button type="submit" class="btn btn-primario" [disabled]="guardando()">
+          {{ claseEnEdicion() === null ? 'Crear clase' : 'Guardar cambios' }}
+        </button>
+        @if (claseEnEdicion() !== null) {
+          <button type="button" class="btn" (click)="cancelarEdicionClase()">Cancelar</button>
+        }
+      </div>
+    </form>
+    @if (formClase.touched && formClase.invalid) {
+      <p class="ayuda-error">Completa los campos obligatorios (duración 15–240 min, cupo mayor que 0).</p>
+    }
+  </section>
+}
+
+<section class="tarjeta tabla-contenedor" [class.cargando]="cargando()" aria-labelledby="t-clases">
+  <h2 id="t-clases">Clases</h2>
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Clase</th><th>Inicio</th><th>Sala</th><th>Plan</th>
+        <th class="numero">Cupo</th><th class="numero">Disponibles</th>
+        @if (esAdmin()) { <th>Acciones</th> }
+      </tr>
+    </thead>
+    <tbody>
+      @for (c of clases(); track c.id) {
+        <tr>
+          <td><strong>{{ c.name }}</strong><div class="tenue">{{ c.instructor }}</div></td>
+          <td>{{ c.startsAt | date: 'EEE d MMM, HH:mm' }}<div class="tenue">{{ c.durationMinutes }} min</div></td>
+          <td>{{ c.roomName }}<div class="tenue">{{ c.branch }}</div></td>
+          <td><span class="chip">{{ c.plan }}</span></td>
+          <td class="numero">{{ c.capacity }}</td>
+          <td class="numero">{{ c.availableSlots }}</td>
+          @if (esAdmin()) {
+            <td>
+              <div class="acciones">
+                <button type="button" class="btn btn-chico" (click)="editarClase(c)">Editar</button>
+                <button type="button" class="btn btn-chico btn-peligro" (click)="eliminarClase(c)">Eliminar</button>
+              </div>
+            </td>
+          }
+        </tr>
+      } @empty {
+        <tr><td [attr.colspan]="esAdmin() ? 7 : 6" class="vacio">{{ cargando() ? 'Cargando…' : 'No hay clases.' }}</td></tr>
+      }
+    </tbody>
+  </table>
+</section>
+
+<!-- ===== Salas ===== -->
+<section class="tarjeta" aria-labelledby="t-salas">
+  <h2 id="t-salas">Salas</h2>
+  @if (esAdmin()) {
+    <form [formGroup]="formSala" (ngSubmit)="guardarSala()" class="formulario">
+      <div class="campo">
+        <label for="s-nombre">Nombre</label>
+        <input id="s-nombre" formControlName="name">
+      </div>
+      <div class="campo">
+        <label for="s-sede">Sede</label>
+        <input id="s-sede" formControlName="branch">
+      </div>
+      <div class="campo">
+        <label for="s-aforo">Aforo</label>
+        <input id="s-aforo" type="number" min="1" max="500" formControlName="capacity">
+      </div>
+      <div class="acciones">
+        <button type="submit" class="btn btn-primario" [disabled]="guardando()">
+          {{ salaEnEdicion() === null ? 'Crear sala' : 'Guardar sala' }}
+        </button>
+        @if (salaEnEdicion() !== null) {
+          <button type="button" class="btn" (click)="cancelarEdicionSala()">Cancelar</button>
+        }
+      </div>
+    </form>
+  }
+  <div class="tabla-contenedor">
+    <table class="tabla">
+      <thead>
+        <tr><th>Sala</th><th>Sede</th><th class="numero">Aforo</th>@if (esAdmin()) { <th>Acciones</th> }</tr>
+      </thead>
+      <tbody>
+        @for (s of salas(); track s.id) {
+          <tr>
+            <td>{{ s.name }}</td>
+            <td>{{ s.branch }}</td>
+            <td class="numero">{{ s.capacity }}</td>
+            @if (esAdmin()) {
+              <td>
+                <div class="acciones">
+                  <button type="button" class="btn btn-chico" (click)="editarSala(s)">Editar</button>
+                  <button type="button" class="btn btn-chico btn-peligro" (click)="eliminarSala(s)">Eliminar</button>
+                </div>
+              </td>
+            }
+          </tr>
+        } @empty {
+          <tr><td [attr.colspan]="esAdmin() ? 4 : 3" class="vacio">No hay salas.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

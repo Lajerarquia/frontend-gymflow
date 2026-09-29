@@ -1,0 +1,135 @@
+<div class="encabezado-pagina">
+  <div>
+    <h1>Reservas</h1>
+    <p class="subtitulo">
+      @if (esStaff()) { Todas las reservas de la red. } @else { Tus reservas. }
+    </p>
+  </div>
+</div>
+
+<section class="tarjeta" aria-labelledby="t-nueva">
+  <h2 id="t-nueva">Nueva reserva</h2>
+  <form [formGroup]="nueva" (ngSubmit)="reservar()" class="formulario">
+    <div class="campo">
+      <label for="n-clase">Clase</label>
+      <select id="n-clase" formControlName="classId">
+        <option value="">Elige una clase…</option>
+        @for (c of clasesFuturas(); track c.id) {
+          <option [value]="c.id" [disabled]="c.availableSlots === 0">
+            {{ c.name }} · {{ c.startsAt | date: 'EEE d MMM, HH:mm' }} · {{ c.availableSlots }} cupos
+          </option>
+        }
+      </select>
+      @if (nueva.controls.classId.touched && nueva.controls.classId.invalid) {
+        <span class="ayuda-error">Elige una clase.</span>
+      }
+    </div>
+    @if (esStaff()) {
+      <div class="campo">
+        <label for="n-socio-id">ID del socio (oid de Azure AD)</label>
+        <input id="n-socio-id" formControlName="memberId" autocomplete="off">
+        @if (nueva.controls.memberId.touched && nueva.controls.memberId.invalid) {
+          <span class="ayuda-error">Indica el socio.</span>
+        }
+      </div>
+      <div class="campo">
+        <label for="n-socio-nombre">Nombre del socio</label>
+        <input id="n-socio-nombre" formControlName="memberName" autocomplete="off">
+        @if (nueva.controls.memberName.touched && nueva.controls.memberName.invalid) {
+          <span class="ayuda-error">Indica el nombre.</span>
+        }
+      </div>
+    }
+    <div class="campo">
+      <button type="submit" class="btn btn-primario" [disabled]="guardando()">
+        {{ guardando() ? 'Reservando…' : 'Reservar' }}
+      </button>
+    </div>
+  </form>
+  <p class="tenue">La reserva queda en estado <strong>Reservada</strong>; el cupo se descuenta cuando un instructor la confirma.</p>
+</section>
+
+<form [formGroup]="filtros" (ngSubmit)="buscar()" class="fila-filtros" aria-label="Filtros">
+  <div class="campo">
+    <label for="f-estado">Estado</label>
+    <select id="f-estado" formControlName="status">
+      <option value="">Todos</option>
+      @for (e of estados; track e) { <option [value]="e">{{ etiqueta[e] }}</option> }
+    </select>
+  </div>
+  <div class="campo">
+    <label for="f-clase">Clase</label>
+    <select id="f-clase" formControlName="classId">
+      <option value="">Todas</option>
+      @for (c of clases(); track c.id) { <option [value]="c.id">{{ c.name }} · {{ c.startsAt | date: 'd MMM HH:mm' }}</option> }
+    </select>
+  </div>
+  @if (esStaff()) {
+    <div class="campo">
+      <label for="f-socio">ID del socio</label>
+      <input id="f-socio" formControlName="memberId" autocomplete="off">
+    </div>
+  }
+  <div class="campo">
+    <label for="f-desde">Creada desde</label>
+    <input id="f-desde" type="datetime-local" formControlName="from">
+  </div>
+  <div class="campo">
+    <label for="f-hasta">Creada hasta</label>
+    <input id="f-hasta" type="datetime-local" formControlName="to">
+  </div>
+  <div class="acciones">
+    <button type="submit" class="btn btn-primario">Filtrar</button>
+    <button type="button" class="btn" (click)="limpiarFiltros()">Limpiar</button>
+  </div>
+</form>
+
+@if (error()) {
+  <div class="tarjeta" role="alert">
+    <p class="ayuda-error">{{ error() }}</p>
+    <button type="button" class="btn" (click)="buscar()">Reintentar</button>
+  </div>
+}
+
+<section class="tarjeta tabla-contenedor" [class.cargando]="cargando()" aria-label="Listado de reservas">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th class="numero">#</th>
+        <th>Clase</th>
+        <th>Socio</th>
+        <th>Estado</th>
+        <th>Creada</th>
+        <th>Última modificación</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (r of reservas(); track r.id) {
+        <tr>
+          <td class="numero">{{ r.id }}</td>
+          <td>{{ r.className }}<div class="tenue">{{ r.classStartsAt | date: 'EEE d MMM, HH:mm' }}</div></td>
+          <td>{{ r.memberName }}</td>
+          <td><span class="estado estado-{{ r.status }}">{{ etiqueta[r.status] }}</span></td>
+          <td>{{ r.createdBy }}<div class="tenue">{{ r.createdAt | date: 'd MMM, HH:mm' }}</div></td>
+          <td>{{ r.updatedBy }}<div class="tenue">{{ r.updatedAt | date: 'd MMM, HH:mm' }}</div></td>
+          <td>
+            <div class="acciones">
+              @for (estado of acciones(r); track estado) {
+                <button type="button" class="btn btn-chico" [class.btn-peligro]="estado === 'CANCELADA'"
+                        [class.btn-primario]="estado === 'CONFIRMADA'"
+                        [disabled]="procesando() === r.id" (click)="cambiarEstado(r, estado)">
+                  {{ accion[estado] }}
+                </button>
+              } @empty {
+                <span class="tenue">—</span>
+              }
+            </div>
+          </td>
+        </tr>
+      } @empty {
+        <tr><td colspan="7" class="vacio">{{ cargando() ? 'Cargando…' : 'No hay reservas con estos filtros.' }}</td></tr>
+      }
+    </tbody>
+  </table>
+</section>

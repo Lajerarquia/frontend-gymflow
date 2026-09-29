@@ -1,0 +1,59 @@
+<div class="encabezado-pagina">
+  <div>
+    <h1>Reportería</h1>
+    <p class="subtitulo">Calculada con los datos reales de reservas y del catálogo.</p>
+  </div>
+  @if (actualizado(); as fecha) {
+    <span class="tenue">Actualizado a las {{ fecha | date: 'HH:mm:ss' }}</span>
+  }
+</div>
+
+<!-- Filtro de período: una fila, arriba de todo lo que depende de él -->
+<div class="fila-filtros" role="group" aria-label="Período">
+  <div class="segmentado">
+    @for (p of periodos; track p.valor) {
+      <button type="button" [class.activo]="periodo() === p.valor" [attr.aria-pressed]="periodo() === p.valor"
+              (click)="elegirPeriodo(p.valor)">{{ p.texto }}</button>
+    }
+  </div>
+  <button type="button" class="btn btn-chico" (click)="cargar()">Actualizar</button>
+</div>
+
+@if (error()) {
+  <div class="tarjeta" role="alert">
+    <p class="ayuda-error">{{ error() }}</p>
+    <button type="button" class="btn" (click)="cargar()">Reintentar</button>
+  </div>
+}
+
+<div [class.cargando]="cargando()">
+  <div class="cifras">
+    <div class="cifra"><div class="etiqueta">Reservas en el período</div><div class="valor">{{ total() }}</div></div>
+    <div class="cifra"><div class="etiqueta">Confirmadas o asistidas</div><div class="valor">{{ confirmadas() }}</div></div>
+    <div class="cifra"><div class="etiqueta">Canceladas</div><div class="valor">{{ canceladas() }}</div></div>
+    <div class="cifra"><div class="etiqueta">Ocupación de próximas clases</div><div class="valor">{{ ocupacionRed() }} %</div></div>
+  </div>
+
+  <section class="tarjeta" aria-labelledby="t-hora">
+    <h2 id="t-hora">Reservas por hora del día</h2>
+    <p class="tenue">Hora en que se creó cada reserva, sumando todos los días del período.</p>
+    <app-grafico-columnas [valores]="porHora()" [etiquetas]="horas" unidad="reservas" nombreEje="Hora"
+                          descripcion="Reservas creadas por hora del día" />
+  </section>
+
+  <div class="rejilla">
+    <section class="tarjeta" aria-labelledby="t-top">
+      <h2 id="t-top">Clases más demandadas</h2>
+      <p class="tenue">Reservas del período, sin contar las canceladas.</p>
+      <app-barras-ranking [filas]="filasDemanda()" modo="ranking" descripcion="Clases más demandadas"
+                          textoVacio="No hay reservas en el período." />
+    </section>
+
+    <section class="tarjeta" aria-labelledby="t-ocupacion">
+      <h2 id="t-ocupacion">Ocupación de las próximas clases</h2>
+      <p class="tenue">Cupos confirmados sobre el cupo de cada clase. No depende del período.</p>
+      <app-barras-ranking [filas]="filasOcupacion()" modo="medidor" [maximo]="100"
+                          descripcion="Ocupación por clase" textoVacio="No hay clases próximas." />
+    </section>
+  </div>
+</div>

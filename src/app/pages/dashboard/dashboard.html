@@ -1,0 +1,150 @@
+<div class="encabezado-pagina">
+  <div>
+    <h1>Hola, {{ sesion.usuario()?.nombre }}</h1>
+    <p class="subtitulo">Lo que ves aquí depende de tus roles.</p>
+  </div>
+</div>
+
+@if (sinRoles()) {
+  <section class="tarjeta">
+    <h2>Aún no tienes un rol asignado</h2>
+    <p>Iniciaste sesión correctamente, pero tu cuenta no tiene roles de GymFlow (Admin, Instructor, Socio o Auditor).
+      Pide a un administrador que te asigne uno en Azure AD.</p>
+  </section>
+}
+
+@if (error()) {
+  <section class="tarjeta" role="alert">
+    <p class="ayuda-error">{{ error() }}</p>
+    <button type="button" class="btn" (click)="cargar()">Reintentar</button>
+  </section>
+}
+
+<div [class.cargando]="cargando()">
+  @if (esAdmin()) {
+    <section aria-labelledby="t-admin">
+      <h2 id="t-admin">Resumen de la cadena</h2>
+      <div class="cifras">
+        <div class="cifra"><div class="etiqueta">Reservas creadas hoy</div><div class="valor">{{ reservasHoy() }}</div></div>
+        <div class="cifra"><div class="etiqueta">Reservas confirmadas activas</div><div class="valor">{{ activas() }}</div></div>
+        <div class="cifra"><div class="etiqueta">Próximas clases</div><div class="valor">{{ proximasClases().length }}</div></div>
+        <div class="cifra"><div class="etiqueta">Ocupación de próximas clases</div><div class="valor">{{ ocupacion() }}%</div></div>
+      </div>
+      <p><a routerLink="/reports">Ver reportería completa →</a></p>
+    </section>
+  }
+
+  @if (esInstructor()) {
+    <div class="rejilla">
+      <section class="tarjeta" aria-labelledby="t-confirmar">
+        <h2 id="t-confirmar">Reservas por confirmar</h2>
+        @for (r of porConfirmar(); track r.id) {
+          <div class="fila-reserva">
+            <div>
+              <strong>{{ r.memberName }}</strong>
+              <div class="tenue">{{ r.className }} · {{ r.classStartsAt | date: 'EEE d MMM, HH:mm' }}</div>
+            </div>
+            <button type="button" class="btn btn-primario btn-chico" [disabled]="procesando() === r.id"
+                    (click)="cambiarEstado(r, 'CONFIRMADA')">Confirmar</button>
+          </div>
+        } @empty {
+          <p class="vacio">No hay reservas pendientes.</p>
+        }
+      </section>
+
+      <section class="tarjeta" aria-labelledby="t-curso">
+        <h2 id="t-curso">En clase ahora</h2>
+        @for (r of enCurso(); track r.id) {
+          <div class="fila-reserva">
+            <div>
+              <strong>{{ r.memberName }}</strong>
+              <div class="tenue">{{ r.className }}</div>
+            </div>
+            <button type="button" class="btn btn-chico" [disabled]="procesando() === r.id"
+                    (click)="cambiarEstado(r, 'COMPLETADA')">Cerrar clase</button>
+          </div>
+        } @empty {
+          <p class="vacio">No hay socios en clase en este momento.</p>
+        }
+      </section>
+    </div>
+  }
+
+  @if (esSocio()) {
+    <section class="tarjeta" aria-labelledby="t-socio">
+      <div class="encabezado-pagina">
+        <h2 id="t-socio">Mis próximas clases</h2>
+        <a routerLink="/reservations" class="btn btn-chico">Reservar una clase</a>
+      </div>
+      @for (r of misProximas(); track r.id) {
+        <div class="fila-reserva">
+          <div>
+            <strong>{{ r.className }}</strong>
+            <div class="tenue">{{ r.classStartsAt | date: "EEEE d 'de' MMMM, HH:mm" }}</div>
+          </div>
+          <div class="acciones">
+            <span class="estado estado-{{ r.status }}">{{ etiqueta[r.status] }}</span>
+            @for (estado of acciones(r); track estado) {
+              <button type="button" class="btn btn-chico btn-peligro" [disabled]="procesando() === r.id"
+                      (click)="cambiarEstado(r, estado)">{{ accion[estado] }}</button>
+            }
+          </div>
+        </div>
+      } @empty {
+        <p class="vacio">No tienes clases próximas. <a routerLink="/reservations">Reserva una</a>.</p>
+      }
+    </section>
+  }
+
+  @if (esAuditor()) {
+    <section class="tarjeta" aria-labelledby="t-auditor">
+      <div class="encabezado-pagina">
+        <h2 id="t-auditor">Últimos eventos</h2>
+        <a routerLink="/audit" class="btn btn-chico">Ver timeline completo</a>
+      </div>
+      <div class="tabla-contenedor">
+        <table class="tabla">
+          <thead><tr><th>Fecha</th><th>Evento</th><th>Usuario</th><th>Reserva</th></tr></thead>
+          <tbody>
+            @for (e of ultimosEventos(); track e.clave) {
+              <tr>
+                <td>{{ e.fecha | date: 'd MMM, HH:mm' }}</td>
+                <td><span class="estado estado-{{ e.tipo }}">{{ e.tipo === 'CREADA' ? 'Creada' : etiqueta[e.tipo] }}</span></td>
+                <td>{{ e.usuario }}</td>
+                <td>#{{ e.reservaId }} · {{ e.socio }} · {{ e.clase }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="4" class="vacio">Sin eventos.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>
+
+<section class="tarjeta sesion" aria-labelledby="t-sesion">
+  <h2 id="t-sesion">Mi sesión</h2>
+  <p class="tenue">Datos leídos de los claims del access token que MSAL obtuvo para el API.</p>
+  <dl>
+    <dt>Correo</dt><dd>{{ sesion.usuario()?.email }}</dd>
+    <dt>Roles (claim roles)</dt>
+    <dd>
+      @for (rol of sesion.usuario()?.roles ?? []; track rol) { <span class="chip">{{ rol }}</span> }
+      @empty { — }
+    </dd>
+    <dt>Scopes (claim scp)</dt>
+    <dd>
+      @for (scope of sesion.usuario()?.scopes ?? []; track scope) { <span class="chip">{{ scope }}</span> }
+      @empty { — }
+    </dd>
+    <dt>Token vence</dt><dd>{{ sesion.usuario()?.expira | date: 'HH:mm:ss' }} <span class="tenue">(MSAL lo renueva solo)</span></dd>
+  </dl>
+  <button type="button" class="btn btn-chico" (click)="probarApi()">Probar llamada al API (GET /api/me)</button>
+  @if (me(); as m) {
+    <p class="exito">El BFF aceptó el token. Roles que leyó: {{ m.roles.join(', ') || '—' }} · scopes: {{ m.scopes.join(', ') }}</p>
+  }
+  @if (errorMe()) {
+    <p class="ayuda-error">{{ errorMe() }}</p>
+  }
+</section>
