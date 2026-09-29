@@ -8,8 +8,9 @@ import { configuracionPendiente } from '../../auth/msal.config';
 import { SesionService } from '../../auth/sesion.service';
 
 /**
- * Pantalla pública de inicio de sesión. También es el redirectUri: cuando Azure AD devuelve la respuesta,
- * se espera a que MSAL termine de procesarla (InteractionStatus.None) y, si hay sesión, se va al dashboard.
+ * Pantalla pública de inicio de sesión, en '' (la redirectUri registrada) y en /login.
+ * Cuando Azure AD devuelve la respuesta, se espera a que MSAL termine de procesarla
+ * (InteractionStatus.None) y, si hay sesión, se va al dashboard.
  */
 @Component({
   selector: 'app-login',

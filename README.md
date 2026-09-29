@@ -13,7 +13,7 @@ Angular + MSAL ──Bearer JWT──> AWS API Gateway (JWT Authorizer) ──> 
 | Pieza | Dónde | Qué hace |
 |---|---|---|
 | `PublicClientApplication` | `auth/msal.config.ts` | Authorization code + PKCE; authority con el tenant; caché en `sessionStorage` |
-| `redirectUri` = `/login` | `auth/msal.config.ts` | La respuesta de Azure llega a una ruta sin guard, así el router no borra el `#code` |
+| `redirectUri` = raíz (`http://localhost:4200`) | `auth/msal.config.ts`, `app.routes.ts` | Es la URI registrada en Azure. La ruta `''` muestra el login sin guard ni redirect, así el router no borra el `#code` |
 | `handleRedirectObservable()` | `app.ts` | Procesa la respuesta de Azure en cada carga |
 | `MsalGuard` + `rolGuard` | `app.routes.ts`, `auth/rol.guard.ts` | Sesión obligatoria + rol según `data.roles`; sin rol → `/forbidden` |
 | `MsalInterceptor` | `app.config.ts` | Adjunta `Authorization: Bearer <access_token>` a `<apiBaseUrl>/api/*` (interceptor de clase: `withInterceptorsFromDi()` + `HTTP_INTERCEPTORS`) |
@@ -40,18 +40,19 @@ En la EP2 vendrán de `ms-gymflow-report` y `ms-gymflow-audit` vía Kafka.
 
 ## Configuración de Azure AD
 
-En el App Registration **"GymFlow"**:
+App Registration **"GymFlow"** (uno solo para la SPA y el API; tenant y client id no son secretos y ya están
+en `src/environments/`):
 
-1. **Authentication → Single-page application**, redirect URIs:
-   `http://localhost:4200/login` y `https://<dominio del frontend>/login`.
-2. **Expose an API**: scope `access_as_user` → `api://<CLIENT_ID>/access_as_user`.
-3. **App roles**: `Admin`, `Instructor`, `Socio`, `Auditor`, asignados a usuarios en *Enterprise applications*.
-4. **Manifest**: `"requestedAccessTokenVersion": 2`.
+| Dato | Valor |
+|---|---|
+| Tenant | `6a3e6e0e-c7e4-4a0a-9a66-1778df0b3b19` |
+| Client id | `ee1bba85-7f98-4977-bf8b-f6acebb7ec6f` |
+| Scope | `api://ee1bba85-7f98-4977-bf8b-f6acebb7ec6f/access_as_user` |
+| Redirect URI (SPA) | `http://localhost:4200` |
+| Tokens | v2 (`requestedAccessTokenVersion: 2`) · App roles `Admin`, `Instructor`, `Socio`, `Auditor` |
 
-Luego reemplaza los placeholders en `src/environments/environment.development.ts` (desarrollo) y
-`src/environments/environment.ts` (producción): `<TENANT_ID>`, `<CLIENT_ID>` y, para producción, la URL del
-API Gateway (`<API_ID>`, `<REGION>`). No hay secretos: una SPA es un cliente público.
-Mientras falten los valores, `/login` muestra un aviso y deshabilita el botón.
+Al desplegar el frontend en otro dominio hay que registrar su origen (ej. `https://<dominio>`) como redirect
+URI de tipo SPA y reemplazar `<API_ID>` y `<REGION>` en `src/environments/environment.ts`.
 
 ## Ejecutar
 

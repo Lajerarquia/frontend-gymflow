@@ -11,7 +11,7 @@ import { filter } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Avisos } from '../core/avisos';
 import { ClaimsToken, decodificarJwt, scopesDe } from './jwt';
-import { RUTA_LOGIN } from './msal.config';
+import { redirectUri } from './msal.config';
 import { Rol, Usuario, rolesValidos, tieneAlgunRol } from './roles';
 
 const EVENTOS_ESCUCHADOS: EventType[] = [
@@ -74,7 +74,7 @@ export class SesionService {
     const cuenta = this.cuentaActiva();
     this.olvidar();
     this.msal
-      .logoutRedirect({ account: cuenta ?? undefined, postLogoutRedirectUri: window.location.origin + RUTA_LOGIN })
+      .logoutRedirect({ account: cuenta ?? undefined, postLogoutRedirectUri: redirectUri() })
       .subscribe({ error: (e) => this.avisos.error('No se pudo cerrar sesión: ' + descripcion(e)) });
   }
 

@@ -8,7 +8,9 @@ import { Login } from './pages/login/login';
 const roles = (...permitidos: Rol[]) => ({ roles: permitidos });
 
 export const routes: Routes = [
-  // Sin guard: aquí vuelve la respuesta de Azure AD (redirectUri).
+  // Raíz = redirectUri registrada en Azure AD. Muestra el login SIN guard ni redirectTo: si redirigiera,
+  // el router podría borrar el #code antes de que MSAL lo lea. El login navega al dashboard cuando MSAL termina.
+  { path: '', pathMatch: 'full', component: Login, title: 'GymFlow' },
   { path: 'login', component: Login, title: 'Iniciar sesión · GymFlow' },
   {
     path: 'dashboard',
@@ -50,6 +52,5 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/forbidden/forbidden').then((m) => m.Forbidden),
     title: 'Sin permiso · GymFlow',
   },
-  { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'dashboard' },
 ];

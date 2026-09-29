@@ -15,13 +15,21 @@ import { environment } from '../../environments/environment';
 export const configuracionPendiente =
   environment.azure.clientId.includes('<') || environment.azure.tenantId.includes('<');
 
-/** Ruta a la que Azure AD devuelve la respuesta del login. No tiene guard ni redirección. */
+/** Pantalla de login a la que se vuelve si el inicio de sesión falla. */
 export const RUTA_LOGIN = '/login';
+
+/**
+ * Redirect URI registrada en el App Registration (tipo SPA): la raíz, `http://localhost:4200`.
+ * Azure AD exige que coincida exactamente. La ruta '' muestra el login, sin guard ni redirección,
+ * para que el router no borre la respuesta (#code=...) antes de que MSAL la procese.
+ */
+export function redirectUri(): string {
+  return window.location.origin;
+}
 
 /**
  * Instancia de MSAL (flujo authorization code + PKCE para SPA).
  * - authority con el tenant: solo usuarios de nuestro directorio.
- * - redirectUri /login: la respuesta (#code=...) llega a una ruta sin guard, así el router no la borra.
  * - sessionStorage: los tokens viven solo mientras la pestaña está abierta.
  */
 export function crearInstanciaMsal(): IPublicClientApplication {
@@ -29,8 +37,8 @@ export function crearInstanciaMsal(): IPublicClientApplication {
     auth: {
       clientId: environment.azure.clientId,
       authority: `https://login.microsoftonline.com/${environment.azure.tenantId}`,
-      redirectUri: window.location.origin + RUTA_LOGIN,
-      postLogoutRedirectUri: window.location.origin + RUTA_LOGIN,
+      redirectUri: redirectUri(),
+      postLogoutRedirectUri: redirectUri(),
       navigateToLoginRequestUrl: true,
     },
     cache: {
