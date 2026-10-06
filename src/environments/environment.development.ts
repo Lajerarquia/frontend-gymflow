@@ -9,5 +9,5 @@ export const environment = {
     clientId: 'ee1bba85-7f98-4977-bf8b-f6acebb7ec6f',
   },
   apiScope: 'api://ee1bba85-7f98-4977-bf8b-f6acebb7ec6f/access_as_user',
-  apiBaseUrl: 'http://localhost:8080',
+  apiBaseUrl: 'https://0z97ecbdsc.execute-api.us-east-1.amazonaws.com',
 };
