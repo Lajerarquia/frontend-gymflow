@@ -47,6 +47,13 @@ export const routes: Routes = [
     title: 'Auditoría · GymFlow',
   },
   {
+    path: 'admin/mq',
+    canActivate: [MsalGuard, rolGuard],
+    data: roles('Admin'),
+    loadComponent: () => import('./pages/admin-mq/admin-mq').then((m) => m.AdminMq),
+    title: 'RabbitMQ · GymFlow',
+  },
+  {
     path: 'forbidden',
     canActivate: [MsalGuard],
     loadComponent: () => import('./pages/forbidden/forbidden').then((m) => m.Forbidden),

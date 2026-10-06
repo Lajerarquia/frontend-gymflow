@@ -16,6 +16,7 @@ const ENLACES: Enlace[] = [
   { ruta: '/catalog', texto: 'Catálogo', roles: ['Admin', 'Instructor'] },
   { ruta: '/reports', texto: 'Reportería', roles: ['Admin'] },
   { ruta: '/audit', texto: 'Auditoría', roles: ['Admin', 'Auditor'] },
+  { ruta: '/admin/mq', texto: 'RabbitMQ', roles: ['Admin'] },
 ];
 
 @Component({

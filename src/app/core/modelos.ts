@@ -93,6 +93,48 @@ export interface Me {
   expira: string;
 }
 
+// ---- Administración de RabbitMQ (EP2): /api/admin/mq/** del BFF → ms-gymflow-mq-admin. Solo Admin. ----
+
+export type ExchangeMq = 'cmd.direct' | 'cmd.topic';
+
+/** Estado de una cola `q.cmd.*`. Los contadores vienen de la API de Management y se refrescan cada ~5 s. */
+export interface ColaMq {
+  name: string;
+  node: string;
+  messages: number;
+  /** Esperando consumidor. */
+  ready: number;
+  /** Entregados a un consumidor que todavía no hace ACK/NACK. */
+  unacked: number;
+  consumers: number;
+  /** Si es una DLQ, la cola principal a la que pertenece. */
+  dlqDe: string | null;
+}
+
+export interface MensajePruebaMq {
+  exchange: ExchangeMq;
+  routingKey: string;
+  type?: string;
+  /** Repetir un eventId sirve para mostrar la idempotencia de notify. */
+  eventId?: string;
+  payload?: unknown;
+}
+
+export interface ResultadoPublicacionMq {
+  eventId: string;
+  type: string;
+  exchange: string;
+  routingKey: string;
+  routed: boolean;
+}
+
+export interface ResultadoReprocesoMq {
+  dlq: string;
+  destino: string;
+  movidos: number;
+  quedanEnDlq: number;
+}
+
 /** Formato de error de todos los servicios. */
 export interface ErrorApi {
   timestamp: string;

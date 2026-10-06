@@ -1,0 +1,129 @@
+<div class="encabezado-pagina">
+  <div>
+    <h1>RabbitMQ</h1>
+    <p class="subtitulo">
+      Colas de notificaciones (ms-gymflow-notify) y sus DLQ. Los contadores se actualizan cada ~5 segundos.
+    </p>
+  </div>
+  <button type="button" class="btn" (click)="cargar()" [disabled]="cargando()">
+    {{ cargando() ? 'Actualizando…' : 'Actualizar' }}
+  </button>
+</div>
+
+@if (error()) {
+  <div class="tarjeta" role="alert">
+    <p class="ayuda-error">{{ error() }}</p>
+    <button type="button" class="btn" (click)="cargar()">Reintentar</button>
+  </div>
+}
+
+<section class="tarjeta tabla-contenedor" [class.cargando]="cargando()" aria-labelledby="t-colas">
+  <h2 id="t-colas">Colas principales</h2>
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Cola</th><th>Nodo</th>
+        <th class="numero">Listos</th><th class="numero">No confirmados</th><th class="numero">Consumidores</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (c of principales(); track c.name) {
+        <tr>
+          <td><strong>{{ c.name }}</strong></td>
+          <td class="tenue">{{ c.node }}</td>
+          <td class="numero">{{ c.ready }}</td>
+          <td class="numero">{{ c.unacked }}</td>
+          <td class="numero">
+            {{ c.consumers }}
+            @if (c.consumers === 0) { <div class="ayuda-error">sin consumidor</div> }
+          </td>
+        </tr>
+      } @empty {
+        <tr><td colspan="5" class="vacio">{{ cargando() ? 'Cargando…' : 'No hay colas. ¿Arrancó ms-gymflow-notify?' }}</td></tr>
+      }
+    </tbody>
+  </table>
+</section>
+
+<section class="tarjeta tabla-contenedor" [class.cargando]="cargando()" aria-labelledby="t-dlq">
+  <h2 id="t-dlq">DLQ (mensajes que no se pudieron procesar: {{ totalEnDlq() }})</h2>
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>DLQ</th><th>Cola de origen</th>
+        <th class="numero">Listos</th><th class="numero">No confirmados</th><th class="numero">Consumidores</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (c of dlqs(); track c.name) {
+        <tr>
+          <td><strong>{{ c.name }}</strong><div class="tenue">{{ c.node }}</div></td>
+          <td>{{ c.dlqDe }}</td>
+          <td class="numero">{{ c.ready }}</td>
+          <td class="numero">{{ c.unacked }}</td>
+          <td class="numero">{{ c.consumers }}</td>
+          <td>
+            <button type="button" class="btn btn-chico" (click)="reprocesar(c)"
+                    [disabled]="c.ready === 0 || reprocesando() === c.name">
+              {{ reprocesando() === c.name ? 'Reprocesando…' : 'Reprocesar' }}
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr><td colspan="6" class="vacio">{{ cargando() ? 'Cargando…' : 'No hay DLQ.' }}</td></tr>
+      }
+    </tbody>
+  </table>
+  <p class="tenue">"Reprocesar" devuelve los mensajes a su cola principal para que notify los intente otra vez.</p>
+</section>
+
+<section class="tarjeta" aria-labelledby="t-prueba">
+  <h2 id="t-prueba">Publicar mensaje de prueba</h2>
+  <form [formGroup]="form" (ngSubmit)="publicar()" class="formulario">
+    <div class="campo">
+      <label for="m-exchange">Exchange</label>
+      <select id="m-exchange" formControlName="exchange" (change)="cambiarExchange()">
+        @for (e of exchanges; track e) { <option [value]="e">{{ e }}</option> }
+      </select>
+    </div>
+    <div class="campo">
+      <label for="m-routing">Routing key</label>
+      <select id="m-routing" formControlName="routingKey" (change)="cambiarRouting()">
+        @for (o of opcionesRouting(); track o.routingKey) {
+          <option [value]="o.routingKey">{{ o.routingKey }} → {{ o.cola ?? 'ninguna cola' }}</option>
+        }
+      </select>
+    </div>
+    <div class="campo">
+      <label for="m-tipo">Tipo (type)</label>
+      <select id="m-tipo" formControlName="type">
+        @for (t of tipos; track t.tipo) { <option [value]="t.tipo">{{ t.tipo }}</option> }
+      </select>
+    </div>
+    @if (ultimoEventId()) {
+      <div class="campo">
+        <label for="m-repetir">
+          <input id="m-repetir" type="checkbox" formControlName="repetirEventId">
+          Repetir el último eventId (idempotencia)
+        </label>
+      </div>
+    }
+    <div class="campo">
+      <button type="submit" class="btn btn-primario" [disabled]="publicando()">
+        {{ publicando() ? 'Publicando…' : 'Publicar mensaje de prueba' }}
+      </button>
+    </div>
+  </form>
+  @if (destino(); as d) {
+    <p class="tenue">
+      {{ form.controls.exchange.value }} · {{ d.routingKey }}: {{ d.explicacion }}.
+      @for (t of tipos; track t.tipo) {
+        @if (t.tipo === form.controls.type.value) { Tipo {{ t.tipo }}: {{ t.explicacion }}. }
+      }
+    </p>
+  }
+  @if (ultimoEventId()) {
+    <p class="tenue">Último eventId: <code>{{ ultimoEventId() }}</code></p>
+  }
+</section>
