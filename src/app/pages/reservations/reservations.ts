@@ -52,13 +52,16 @@ export class Reservations implements OnInit {
     classId: ['', Validators.required],
     memberId: [''],
     memberName: [''],
+    memberEmail: [''],
   });
 
   ngOnInit(): void {
     if (this.esStaff()) {
-      // Para reservar a nombre de un socio hay que indicar quién es.
+      // Para reservar a nombre de un socio hay que indicar quién es y a qué email avisarle cuando se confirme
+      // (sin email, la notificación de RabbitMQ termina en la DLQ).
       this.nueva.controls.memberId.addValidators(Validators.required);
       this.nueva.controls.memberName.addValidators(Validators.required);
+      this.nueva.controls.memberEmail.addValidators([Validators.required, Validators.email, Validators.maxLength(254)]);
     }
     this.catalogoApi.listarClases().subscribe({
       next: (clases) => this.clases.set(clases),
@@ -105,6 +108,7 @@ export class Reservations implements OnInit {
     if (this.esStaff()) {
       datos.memberId = v.memberId.trim();
       datos.memberName = v.memberName.trim();
+      datos.memberEmail = v.memberEmail.trim();
     }
     this.guardando.set(true);
     this.reservasApi.crear(datos).subscribe({

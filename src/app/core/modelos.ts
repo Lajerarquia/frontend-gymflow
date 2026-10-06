@@ -14,6 +14,8 @@ export interface Reserva {
   classStartsAt: string;
   memberId: string;
   memberName: string;
+  /** Destinatario de las notificaciones (EP2). Las reservas anteriores a la EP2 no lo tienen. */
+  memberEmail?: string | null;
   status: EstadoReserva;
   createdBy: string;
   createdById: string;
@@ -28,6 +30,8 @@ export interface NuevaReserva {
   /** Solo lo usan Admin e Instructor; para un Socio el BFF pone sus propios datos. */
   memberId?: string;
   memberName?: string;
+  /** Email del socio para la notificación de confirmación. Si reserva el Socio, se usa el de su token. */
+  memberEmail?: string;
 }
 
 export interface FiltrosReserva {

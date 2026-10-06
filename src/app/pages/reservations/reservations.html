@@ -39,6 +39,13 @@
           <span class="ayuda-error">Indica el nombre.</span>
         }
       </div>
+      <div class="campo">
+        <label for="n-socio-email">Email del socio</label>
+        <input id="n-socio-email" type="email" formControlName="memberEmail" autocomplete="off">
+        @if (nueva.controls.memberEmail.touched && nueva.controls.memberEmail.invalid) {
+          <span class="ayuda-error">Indica un email válido: ahí le avisamos cuando se confirme.</span>
+        }
+      </div>
     }
     <div class="campo">
       <button type="submit" class="btn btn-primario" [disabled]="guardando()">
