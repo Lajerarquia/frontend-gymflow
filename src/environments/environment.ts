@@ -11,5 +11,5 @@ export const environment = {
   /** Scope expuesto por el App Registration "GymFlow". */
   apiScope: 'api://ee1bba85-7f98-4977-bf8b-f6acebb7ec6f/access_as_user',
   /** URL del AWS API Gateway (HTTP API, stage $default). */
-  apiBaseUrl: 'https://<API_ID>.execute-api.<REGION>.amazonaws.com',
+  apiBaseUrl: 'https://0z97ecbdsc.execute-api.us-east-1.amazonaws.com',
 };
